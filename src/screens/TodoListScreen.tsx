@@ -1,15 +1,21 @@
-import { StatusBar } from "expo-status-bar";
-import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import TaskItem from "../components/TaskItem";
+import { Button, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import AntdIcon from "react-native-vector-icons/AntDesign";
-
 import { NavigationProp, ParamListBase } from "@react-navigation/native";
+
+import TaskItem from "../components/TaskItem";
+import { useTaskContext } from "../contexts/TaskContext";
 
 type TodoListScreenProps = {
     navigation: NavigationProp<ParamListBase>;
 };
 
 export default function TodoListScreen({ navigation }: TodoListScreenProps) {
+    const { tasks, completedTaskStatus, toggleShowCompletedTasks } = useTaskContext();
+
+    const handleToggleShowCompletedTasks = () => {
+        toggleShowCompletedTasks(completedTaskStatus === "show" ? "hide" : "show");
+    };
+
     return (
         <View style={styles.container}>
             <View style={{ paddingVertical: 30, paddingHorizontal: 20 }}>
@@ -17,14 +23,25 @@ export default function TodoListScreen({ navigation }: TodoListScreenProps) {
                 <View style={styles.header}>
                     <Text style={{ fontSize: 26, fontWeight: "bold" }}>Todo List</Text>
 
-                    <Button title="Hide completed" onPress={() => {}} />
+                    <Button
+                        title={completedTaskStatus === "show" ? "Hide completed" : "Show completed"}
+                        onPress={handleToggleShowCompletedTasks}
+                    />
                 </View>
 
                 {/* Todo list items */}
                 <View style={{ marginTop: 20 }}>
-                    <TaskItem />
-                    <TaskItem />
-                    <TaskItem />
+                    <FlatList
+                        data={tasks}
+                        keyExtractor={(item) => item.id}
+                        renderItem={({ item }) => {
+                            if (completedTaskStatus === "hide" && item.isCompleted) {
+                                return null;
+                            }
+
+                            return <TaskItem task={item} navigation={navigation} />;
+                        }}
+                    />
                 </View>
             </View>
 
@@ -32,7 +49,9 @@ export default function TodoListScreen({ navigation }: TodoListScreenProps) {
             <TouchableOpacity
                 style={styles.fab}
                 onPress={() => {
-                    navigation.navigate("AddNewTodoScreen");
+                    navigation.navigate("TodoInputScreen", {
+                        type: "add",
+                    });
                 }}
             >
                 <AntdIcon name="plus" size={24} color="white" />
